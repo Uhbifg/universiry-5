@@ -4,7 +4,7 @@
 #include <time.h> // for clock
 #include "matrix_init.h"
 #include "matrix_print.h"
-#include "matrix_inverse_multi.h"
+#include "matrix_inverse.h"
 #include "norm.h"
 
 
@@ -26,7 +26,6 @@ int main(int argc, char **argv) {
     pthread_t	*pids = NULL;	/* массив идентификаторов потоков*/
     struct pthread_arg	*pargs = NULL; /* массив аргументов потоков */
 
-    
 
     /* read input arguments */
     if (argc == 5) {
@@ -71,14 +70,14 @@ int main(int argc, char **argv) {
         printf("Invalid thread_num number");
         return -1;
     }
-    
+
     pids = malloc(sizeof(pthread_t) * p);
     pargs = malloc(sizeof(struct pthread_arg) * p);
 
     /* create matrix */
     mat = (double*)malloc(n * n * sizeof(double));
     inverse = (double*)malloc(n * n * sizeof(double));
-    vec = (int*)malloc(n * sizeof(int));
+    vec = (int*)malloc(2 * n * sizeof(int));
     if(matrix_init(mat, n, k, filename) != 0){
         printf("Matrix init error. \n");
         free(mat);
@@ -90,18 +89,18 @@ int main(int argc, char **argv) {
     }
 
     printf("Matrix: \n");
-    matrix_print(mat, n, n, m);
+    matrix_print(mat, n, n, m, 1, vec);
     /* compute inverse matrix and time */
     t = clock();
     if(matrix_inverse(mat, n, inverse, vec, pids, pargs, p) != 0){
-        printf("problem");
-        
+        printf("problem \n");
+
         free(mat);
         free(inverse);
         free(vec);
         free(pids);
         free(pargs);
-        
+
         return -1;
     }
     t = clock() - t;
@@ -111,11 +110,13 @@ int main(int argc, char **argv) {
     /* create matrix (again) */
     if(matrix_init(mat, n, k, filename) != 0){
         printf("Matrix init error in second time. \n");
+
         free(mat);
         free(inverse);
         free(vec);
         free(pids);
         free(pargs);
+
         return -1;
     }
 
@@ -123,9 +124,9 @@ int main(int argc, char **argv) {
     /* print results */
 
     printf("Inverse matrix: \n");
-    matrix_print(inverse, n, n, m);
+    matrix_print(inverse, n, n, m, 0, vec);
     printf("\n Time taken to find the inverse matrix: %f \n", time_taken);
-    printf("\n Residual (2 norm): %10.3e \n", norm(mat, inverse, n));
+    printf("\n Residual (2 norm): %10.3e \n", norm(mat, inverse, n, vec));
 
 
 

@@ -1,18 +1,25 @@
-#include "matrix_inverse_multi.h"
+#include "matrix_inverse.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <pthread.h>
 #include "sys/types.h"
+#include "synchronize.h"
 
 
+void *thread_program(void *arg)
+{
+	int	*res; /* возвращаемое функцией (потоком) значение */
+	struct pthread_arg	*parg = arg;
+
+}
 
 int  matrix_inverse(double *array, int n, double *inverse, int *vec, pthread_t *pids, struct pthread_arg *pargs, int p) {
     double eps = 0.00000001;
     double temp = 0;
     int temp_col = 0;
-	void *pres;
+	  void *pres;
     int	res = 0, tmp;
     /* Initialization inverse matrix by the identity matrix*/
     for (int i = 0; i < n; i++) {
@@ -36,7 +43,7 @@ int  matrix_inverse(double *array, int n, double *inverse, int *vec, pthread_t *
         pargs[i].indx = 0;
         pargs[i].vector = vec;
     }
-	
+
     int a = 0, ba = 0;
     /* gauss elimination with pivoting by row */
     for (int i = 0; i < n; i++) {
@@ -73,23 +80,24 @@ int  matrix_inverse(double *array, int n, double *inverse, int *vec, pthread_t *
             }
         }
     }
-	
-	
-	
-	for (int j = 0; j < p; j++){
-        tmp = pthread_join(pids[j], &pres);
 
-        if (tmp != 0) {
-            fprintf(stderr, "Error: %s:%d", __FILE__, __LINE__);
-            return -2;
+
+    for (int j = 0; j < p; j++){
+            tmp = pthread_join(pids[j], &pres);
+
+            if (tmp != 0) {
+                fprintf(stderr, "Error: %s:%d", __FILE__, __LINE__);
+                return -2;
+            }
+
+            if (*((int *)pres) != 0)
+                res = 1;
+
+            free(pres);
         }
-
-        if (*((int *)pres) != 0)
-            res = 1;
-
-        free(pres);
     }
-	
+
+
     for (int i = 0; i < n; i++) {
         temp = array[i + n * vec[i]];
         for (int j = 0; j < n; j++) {
