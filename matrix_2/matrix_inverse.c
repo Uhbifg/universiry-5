@@ -1,12 +1,19 @@
-#include "matrix_inverse.h"
+#include "matrix_inverse_multi.h"
 #include <math.h>
 #include <stdio.h>
-#include "matrix_print.h"
+#include <stdlib.h>
 
-int matrix_inverse(double *array, int n, double *inverse, int *vec) {
+#include <pthread.h>
+#include "sys/types.h"
+
+
+
+int  matrix_inverse(double *array, int n, double *inverse, int *vec, pthread_t *pids, struct pthread_arg *pargs, int p) {
     double eps = 0.00000001;
     double temp = 0;
     int temp_col = 0;
+	void *pres;
+    int	res = 0, tmp;
     /* Initialization inverse matrix by the identity matrix*/
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
@@ -19,6 +26,17 @@ int matrix_inverse(double *array, int n, double *inverse, int *vec) {
         vec[i] = i;
     }
 
+
+    for (int i = 0; i < p; i++) { /* для каждого потока задаем начальные аргументы*/
+        pargs[i].p_current = i; /* номер потока*/
+        pargs[i].p_total = p; /* общее количество потоков*/
+        pargs[i].n = n; /* размерность матицы */
+        pargs[i].array = array; /* матрица */
+        pargs[i].inverse = inverse;
+        pargs[i].indx = 0;
+        pargs[i].vector = vec;
+    }
+	
     int a = 0, ba = 0;
     /* gauss elimination with pivoting by row */
     for (int i = 0; i < n; i++) {
@@ -55,6 +73,23 @@ int matrix_inverse(double *array, int n, double *inverse, int *vec) {
             }
         }
     }
+	
+	
+	
+	for (int j = 0; j < p; j++){
+        tmp = pthread_join(pids[j], &pres);
+
+        if (tmp != 0) {
+            fprintf(stderr, "Error: %s:%d", __FILE__, __LINE__);
+            return -2;
+        }
+
+        if (*((int *)pres) != 0)
+            res = 1;
+
+        free(pres);
+    }
+	
     for (int i = 0; i < n; i++) {
         temp = array[i + n * vec[i]];
         for (int j = 0; j < n; j++) {
