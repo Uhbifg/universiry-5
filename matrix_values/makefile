@@ -4,7 +4,7 @@ CFLAGS=-c -Wall
 all: a clean
 
 a: main.o matrix_print.o matrix_init.o matrix_eginvalues.o norm.o
-	$(CC) main.o matrix_init.o matrix_print.o matrix_eginvalues.o norm.o -o a -lm
+	$(CC) main.o matrix_init.o matrix_print.o matrix_eginvalues.o norm.o -o a -lm -O3
 
 main.o: main.c
 	$(CC) $(CFLAGS) main.c

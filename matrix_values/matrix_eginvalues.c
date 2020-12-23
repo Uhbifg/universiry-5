@@ -139,10 +139,9 @@ void LR_shift(double *array, int n, double s, double *vec, int mat_size, double 
                 flag = 1;
             }
         }
-
     }
 
-    // A + s * E
+    // A - s * E
     for(int i = 0; i < n; i++){
         array[i + i * mat_size] -= s;
     }
@@ -151,7 +150,7 @@ void LR_shift(double *array, int n, double s, double *vec, int mat_size, double 
     // A = R * L
     LR_decomposition(array, n, mat_size);
     RL_from_LR(array, n, vec, mat_size);
-    // A - s * E
+    // A + s * E
     for(int i = 0; i < n; i++){
         array[i + i * mat_size] += s;
     }
@@ -160,7 +159,7 @@ void LR_shift(double *array, int n, double s, double *vec, int mat_size, double 
 /* итерация LR алгоритма*/
 int  one_iter(double *array, int n, double *vec, double eps, double norm, int mat_size){
     double s = array[n - 1 +  (n - 1) * mat_size];
-    while(array[n - 1 + (n - 2) * mat_size] > norm * eps && array[n - 2 + (n - 1) * mat_size] > norm * eps){
+    while(array[n - 1 + (n - 2) * mat_size] > norm  && array[n - 2 + (n - 1) * mat_size] > norm ){
         LR_shift(array, n, s, vec, mat_size, eps);
         s = array[n - 1 +  (n - 1) * mat_size];
     }
@@ -194,6 +193,7 @@ int matrix_eginvalues(double *array, int n, double eps, double *vec, int *indx){
         count += two_two_eginvalues(array, vec, n);
     }else{
         rotate_method(array, n, vec, indx);
+	printf("rotate done");
         count += LR_method(array, n, vec, eps);
     }
     return count;

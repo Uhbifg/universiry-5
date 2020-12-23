@@ -14,7 +14,7 @@ double f(int k, int n, int i, int j) {
             if(i == j){
                 return 2;
             }
-            if (i - j == 1 || j - i == 0) {
+            if (i - j == 1 || j - i == 1) {
                 return -1;
             } else {
                 return 0;

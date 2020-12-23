@@ -62,8 +62,8 @@ int main(int argc, char **argv) {
 
     /* create matrix */
     mat = (double*)malloc(n * n * sizeof(double));
-    vec = (double*)malloc(2 * n * sizeof(double));
-    indx = (int*)malloc(2 * n * sizeof(int));
+    vec = (double*)malloc(4 * n * sizeof(double));
+    indx = (int*)malloc(4 * n * sizeof(int));
     if(matrix_init(mat, n, k, filename) != 0){
         printf("Matrix init error. \n");
         free(mat);
