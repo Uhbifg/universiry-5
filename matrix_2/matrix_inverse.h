@@ -9,9 +9,7 @@ struct pthread_arg {
     int	p_current, p_total, n;
     double	*array;
     double *inverse;
-    int indx;
-    double temp;
-    int *vector;
+    int *vec;
 };	/* объявление структуры для аргументов потока */
 
 

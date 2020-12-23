@@ -2,23 +2,78 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "matrix_print.h"
 #include <pthread.h>
 #include "sys/types.h"
 #include "synchronize.h"
+
 
 
 void *thread_program(void *arg)
 {
 	int	*res; /* возвращаемое функцией (потоком) значение */
 	struct pthread_arg	*parg = arg;
+  double eps = 0.00000001;
+  double temp = 0;
+  int temp_col = 0;
+  int a = 0, ba = 0;
 
-}
+
+
+
+   /* gauss elimination with pivoting by row */
+   for (int i = 0; i < parg->n; i++) {
+      synchronize(parg->p_total);
+        if(parg->p_current == 0){
+          temp = parg->array[i + parg->vec[i] * parg->n];
+          temp_col = parg->vec[i];
+          for (int j = 0; j < parg->n; j++) {
+              if (fabs(parg->array[i + parg->vec[j] * parg->n]) > temp) {
+                  temp_col = parg->vec[j];
+                  temp = fabs(parg->array[i + parg->vec[j] * parg->n]);
+                  a = 1;
+                  ba = j;
+              }
+          }
+          if(a == 1){
+              a = 0;
+              int b = parg->vec[i];
+              parg->vec[i] = temp_col;
+              parg->vec[ba] = b;
+              parg->vec[parg->n + temp_col] = i;
+              parg->vec[parg->n + b] = ba;
+          }
+        }
+        synchronize(parg->p_total);
+       if(fabs(parg->array[i + parg->vec[i] * parg->n]) < eps){
+         printf("(whooops, smthing wrong)\n");
+         *res = -1;
+         break;
+       }else{
+         for (int j =  parg->p_current; j < parg->n; j +=  parg->p_total) {
+             if (j != i) {
+                 temp = parg->array[j + parg->n * parg->vec[i]] / parg->array[i + parg->n * parg->vec[i]];
+                 for (int k = 0; k < parg->n; k++) {
+                     parg->array[j + parg->n * k] -= parg->array[i + parg->n * k] * temp;
+                     parg->inverse[j + parg->n * k] -= parg->inverse[i + parg->n * k] * temp;
+                 }
+             }
+         }
+       }
+   }
+
+   synchronize(parg->p_total);
+
+   for (int i = parg->p_current; i < parg->n; i += parg->p_total) {
+       for (int j = 0; j < parg->n; j++) {
+           parg->inverse[i + parg->n * j] /= parg->array[i + parg->n * parg->vec[i]];
+       }
+   }
+
+  }
+
 
 int  matrix_inverse(double *array, int n, double *inverse, int *vec, pthread_t *pids, struct pthread_arg *pargs, int p) {
-    double eps = 0.00000001;
-    double temp = 0;
-    int temp_col = 0;
 	  void *pres;
     int	res = 0, tmp;
     /* Initialization inverse matrix by the identity matrix*/
@@ -31,6 +86,7 @@ int  matrix_inverse(double *array, int n, double *inverse, int *vec, pthread_t *
             }
         }
         vec[i] = i;
+        vec[n + i] = i;
     }
 
 
@@ -40,69 +96,24 @@ int  matrix_inverse(double *array, int n, double *inverse, int *vec, pthread_t *
         pargs[i].n = n; /* размерность матицы */
         pargs[i].array = array; /* матрица */
         pargs[i].inverse = inverse;
-        pargs[i].indx = 0;
-        pargs[i].vector = vec;
-    }
+        pargs[i].vec = vec;
+        /* создаем поток, исполняющий thread_program с заданными аргументами */
+		    res = pthread_create(pids + i, NULL, thread_program, pargs + i);
+		    /* запись 'pids + i' равнозначна записи '&pids[i]' */
 
-    int a = 0, ba = 0;
-    /* gauss elimination with pivoting by row */
-    for (int i = 0; i < n; i++) {
-        temp = array[i + vec[i] * n];
-        temp_col = vec[i];
-        for (int j = 0; j < n; j++) {
-            if (fabs(array[i + vec[j] * n]) > temp) {
-                temp_col = vec[j];
-                temp = fabs(array[i + vec[j] * n]);
-                a = 1;
-                ba = j;
-            }
-        }
-        if(a == 1){
-            a = 0;
-            int b = vec[i];
-            vec[i] = temp_col;
-            vec[ba] = b;
-            vec[n + temp_col] = i;
-            vec[n + b] = ba;
-        }
-        if(fabs(array[i + vec[i] * n]) < eps){
-          printf("(whooops, smthing wrong)\n");
-          return -1;
-        }
-        for (int j = 0; j < n; j++) {
-            if (j != i) {
-
-                temp = array[j + n * vec[i]] / array[i + n * vec[i]];
-                for (int k = 0; k < n; k++) {
-                    array[j + n * k] -= array[i + n * k] * temp;
-                    inverse[j + n * k] -= inverse[i + n * k] * temp;
-                }
-            }
-        }
+    		if (res != 0) {
+            printf("err1\n");
+    			  return -1;
+    		}
     }
 
 
-    for (int j = 0; j < p; j++){
-            tmp = pthread_join(pids[j], &pres);
-
-            if (tmp != 0) {
-                fprintf(stderr, "Error: %s:%d", __FILE__, __LINE__);
-                return -2;
-            }
-
-            if (*((int *)pres) != 0)
-                res = 1;
-
-            free(pres);
-        }
+    for(int i = 0; i < p; i++){
+      pthread_join(pids[i], &pres);
     }
 
 
-    for (int i = 0; i < n; i++) {
-        temp = array[i + n * vec[i]];
-        for (int j = 0; j < n; j++) {
-            inverse[i + n * j] /= temp;
-        }
-    }
+
+
     return 0;
 }

@@ -17,6 +17,7 @@ int matrix_inverse(double *array, int n, double *inverse, int *vec) {
             }
         }
         vec[i] = i;
+        vec[n + i] = i;
     }
 
     int a = 0, ba = 0;
@@ -61,5 +62,6 @@ int matrix_inverse(double *array, int n, double *inverse, int *vec) {
             inverse[i + n * j] /= temp;
         }
     }
+
     return 0;
 }
