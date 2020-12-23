@@ -10,6 +10,8 @@
 
 #include <pthread.h>
 #include "sys/types.h"
+#include <sys/time.h>
+#include <math.h>
 
 
 
@@ -21,8 +23,7 @@ int main(int argc, char **argv) {
     double* mat = NULL;
     double* inverse = NULL;
     int* vec = NULL;
-    double time_taken = 0;
-    clock_t t = 0;
+    struct timeval	tv1, tv2, tv_diff;
     pthread_t	*pids = NULL;	/* массив идентификаторов потоков*/
     struct pthread_arg	*pargs = NULL; /* массив аргументов потоков */
 
@@ -91,7 +92,7 @@ int main(int argc, char **argv) {
     printf("Matrix: \n");
     matrix_print(mat, n, n, m, 1, vec);
     /* compute inverse matrix and time */
-    t = clock();
+    gettimeofday(&tv1, NULL);
     if(matrix_inverse(mat, n, inverse, vec, pids, pargs, p) != 0){
         printf("problem \n");
 
@@ -103,9 +104,8 @@ int main(int argc, char **argv) {
 
         return -1;
     }
-    t = clock() - t;
-
-    time_taken = ((double)t)/CLOCKS_PER_SEC;
+    gettimeofday(&tv2, NULL);
+    timersub(&tv2, &tv1, &tv_diff);
 
     /* create matrix (again) */
     if(matrix_init(mat, n, k, filename) != 0){
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 
     printf("Inverse matrix: \n");
     matrix_print(inverse, n, n, m, 0, vec);
-    printf("\n Time taken to find the inverse matrix: %f \n", time_taken);
+    printf("Time: %ld.%06ld\n", tv_diff.tv_sec, tv_diff.tv_usec);
     printf("\n Residual (2 norm): %10.3e \n", norm(mat, inverse, n, vec));
 
 
