@@ -130,36 +130,30 @@ void RL_from_LR(double *array, int n, double *vec, int mat_size){
 
 /* LR со сдвигом*/
 void LR_shift(double *array, int n, double s, double *vec, int mat_size, double eps){
-    int flag = 1;
-    while(flag){
-        flag = 0;
-        for(int i = 0; i < n - 1; i++) {
-            if (fabs(array[i + i * mat_size] - s - array[i + (i - 1) * mat_size] * array[i - 1 + i * mat_size]) < 1e-10) {
-                s = 0;
-                flag = 1;
-            }
-        }
-    }
-
-    // A - s * E
+    
+   
+// A - s * E
     for(int i = 0; i < n; i++){
-        array[i + i * mat_size] -= s;
-    }
+        array[i + i * mat_size] -= s/2;
+  
+}
+    
 
     // L, R = A
     // A = R * L
     LR_decomposition(array, n, mat_size);
     RL_from_LR(array, n, vec, mat_size);
-    // A + s * E
-    for(int i = 0; i < n; i++){
-        array[i + i * mat_size] += s;
-    }
+    // A +
+ for(int i = 0; i < n; i++){
+        array[i + i * mat_size] += s/2;
+  
+}
 }
 
 /* итерация LR алгоритма*/
 int  one_iter(double *array, int n, double *vec, double eps, double norm, int mat_size){
     double s = array[n - 1 +  (n - 1) * mat_size];
-    while(array[n - 1 + (n - 2) * mat_size] > norm  && array[n - 2 + (n - 1) * mat_size] > norm ){
+    while(array[n - 1 + (n - 2) * mat_size] > eps * norm && array[n - 1 + (n + 2) * mat_size] > eps * norm ){
         LR_shift(array, n, s, vec, mat_size, eps);
         s = array[n - 1 +  (n - 1) * mat_size];
     }
@@ -179,7 +173,7 @@ int LR_method(double *array, int n, double *vec, double eps){
         norm = inf_norm(array, i, n);
         count += one_iter(array, i, vec, eps, norm, n);
     }
-    count += two_two_eginvalues(array, vec, n);
+	count += two_two_eginvalues(array, vec, n);
     return count;
 }
 
