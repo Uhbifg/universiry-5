@@ -11,17 +11,10 @@ void matrix_print(double *array, int n, int l, int m){
             if(j == m){
                 break;
             }
-            if(!isnan(array[i + j * n])){if(j != l - 1){
-              printf("%10.3e ", array[i + j * n]);
-            }else{
-              printf("%10.3e", array[i + j * n]);
-            }
+            printf("%10.3e", array[i + j * n]);
           }
-
-
+          printf("\n");
         }
-        printf("\n");
-    }
     printf("\n");
 }
 
